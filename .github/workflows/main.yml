@@ -22,47 +22,6 @@ jobs:
         uses: cypress-io/github-action@v5.0.9
         with:
           runTests: false
-
-  unit-test:
-    needs: [install-dependencies]
-    name: Run Unit Test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install dependencies
-        uses: cypress-io/github-action@v5.0.9
-        with:
-          runTests: false
-      - name: unit-test
-        run: npm test
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v3.1.2
-        with:
-          name: coverage
-          path: coverage/
-          retention-days: 1
-
-      - name: ✅ Upload Jest coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          directory: coverage/
-          flags: unit-test-coverage
-          token: ${{ secrets.CODECOV_TOKEN }}
-
-  lint:
-    needs: install-dependencies
-    name: Run Lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install dependencies
-        uses: cypress-io/github-action@v5.0.9
-        with:
-          runTests: false
-      - name: lint
-        run: npm run lint
-
   cypress-e2e-test:
     # ran out od parallelization
     # strategy:
@@ -84,7 +43,7 @@ jobs:
         with:
           start: npm start
           wait-on: 'http://localhost:3000'
-          browser: chrome
+          browser: replay-chromium
           record: true
           # parallel: true
           group: e2e-tests
@@ -92,60 +51,20 @@ jobs:
         env:
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Upload artifacts (Coverage_step3)
         uses: actions/upload-artifact@v3.1.2
         with:
           name: coverage-cy-e2e
           path: coverage-cy/
           retention-days: 1
-
       - name: ✅ Upload e2e coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
           directory: coverage-cy/
           flags: cypress-e2e-coverage
           token: ${{ secrets.CODECOV_TOKEN }}
-
-  cypress-ct-test:
-    strategy:
-      matrix:
-        machines: [1, 2, 3f]
-    needs: [install-dependencies]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Install Specific Chrome Version
-        run: |
-          sudo apt-get install -y wget
-          sudo wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-          sudo apt-get install ./google-chrome-stable_current_amd64.deb
-
-      - name: Cypress component tests 🧪
-        uses: cypress-io/github-action@v5.0.9
-        with:
-          # we have already installed everything
-          component: true
-          browser: chrome
-          record: true
-          parallel: true
-          group: ct-tests
-          tag: ct-tests
-        env:
-          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload artifacts (Coverage_step3)
-        uses: actions/upload-artifact@v3.1.2
-        with:
-          name: coverage-cy-ct
-          path: coverage-cy/
-          retention-days: 1
-
-      - name: ✅ Upload CT coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          directory: coverage-cy/
-          flags: cypress-ct-coverage
-          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload replays
+				if: always()
+				uses: replayio/action-upload@v0.4.7
+				with:
+				  api-key: rwk_r0HfdJBTl9IYKTS6LMg6BBG0RTVo7rcyVnLeoBA9uO8

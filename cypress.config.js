@@ -1,6 +1,7 @@
 const {defineConfig} = require('cypress')
 const codeCoverageTask = require('@bahmutov/cypress-code-coverage/plugin')
 // const isCI = require('is-ci')
+const replay = require('@replayio/cypress')
 
 module.exports = defineConfig({
   projectId: 'r9paau',
@@ -13,6 +14,7 @@ module.exports = defineConfig({
   e2e: {
     excludeSpecPattern: '**/*.+(exercise|final|extra-)*.js',
     setupNodeEvents(on, config) {
+      replay.default(on, config)
       // why 8811 in CI? Maybe Netlify related
       // const isDev = config.watchForFileChanges
       // if (!isCI) {
