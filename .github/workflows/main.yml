@@ -64,7 +64,7 @@ jobs:
           flags: cypress-e2e-coverage
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload replays
-				if: always()
-				uses: replayio/action-upload@v0.4.7
-				with:
-				  api-key: rwk_r0HfdJBTl9IYKTS6LMg6BBG0RTVo7rcyVnLeoBA9uO8
+        if: always()
+        uses: replayio/action-upload@v0.4.7
+        with:
+          api-key: rwk_r0HfdJBTl9IYKTS6LMg6BBG0RTVo7rcyVnLeoBA9uO8
