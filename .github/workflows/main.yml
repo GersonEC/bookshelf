@@ -17,64 +17,41 @@ jobs:
         with:
           cache: 'npm'
           node-version: 16.10.0
-
       - name: Install dependencies
         uses: cypress-io/github-action@v5.0.9
         with:
           runTests: false
   cypress-e2e-test:
-    #    if you want to enable parallelization
-    strategy:
-      matrix:
-        machines: [1, 2, 3]
-    needs: [install-dependencies]
+  name: Cypress tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Install Specific Chrome Version
-        run: |
-          sudo apt-get install -y wget
-          sudo wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-          sudo apt-get install ./google-chrome-stable_current_amd64.deb
-      - name: Cypress e2e tests 🧪
-        uses: cypress-io/github-action@v5.0.2
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup node
+        uses: actions/setup-node@v3
         with:
-          start: yarn dev
-          wait-on: 'http://localhost:3000'
-          browser: 'Replay Chromium'
-          # if you want to enable parallelization
-          record: true
-          parallel: true
-          group: e2e-tests
-          tag: e2e-tests
-        env:
-          # if you want to enable parallelization
-          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # for replay.io
-          RECORD_ALL_CONTENT: 1
-          RECORD_REPLAY_METADATA_FILE: /tmp/replay-metadata
-
-      # for replay.io
-      - name: Upload replays
-        if: ${{ always() }}
-        uses: replayio/action-upload@v0.4.3
+          node-version: 16
+      - name: Install dependencies
+        uses: bahmutov/npm-install@v1
+      - uses: actions/cache@v2
         with:
+          path: ~/.cache/Cypress
+          key: my-cache-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - uses: replayio/action-cypress@v0.2.7
+        with:
+          # An API key (usually a Team API Key) to use to upload replays.
+          # Configure this via GitHub repo settings.
           api-key: rwk_r0HfdJBTl9IYKTS6LMg6BBG0RTVo7rcyVnLeoBA9uO8
-          metadata-file: /tmp/replay-metadata
-
-      # if you want to enable codecov
-      - name: Upload artifacts (Coverage_step3)
-        uses: actions/upload-artifact@v3.1.1
-        with:
-          name: coverage-cy-e2e
-          path: coverage-cy/
-          retention-days: 1
-
-      - name: ✅ Upload e2e coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          directory: coverage-cy/
-          flags: cypress-e2e-coverage
-          token: ${{ secrets.CODECOV_TOKEN }}
+          # The Replay browser to use: 'replay-firefox' or 'replay-chromium'
+          browser: 'replay-chromium'
+          # An optional command to run your tests.
+          command: npm run cy:open-e2e
+          # When true, replays will be accessible to anyone with the link.
+          # This is useful for open source projects that want to collaborate
+          # with external users.
+          public: true
+          # When true, replays of both passed and failed tests are uploaded
+          upload-all: true
+          # An optional working directory which is useful if the project being
+          # tested resides in a subdirectory of the repository
+          working-directory: .
