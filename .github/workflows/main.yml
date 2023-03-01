@@ -17,41 +17,54 @@ jobs:
         with:
           cache: 'npm'
           node-version: 16.10.0
+
       - name: Install dependencies
         uses: cypress-io/github-action@v5.0.9
         with:
           runTests: false
   cypress-e2e-test:
-  name: Cypress tests
+    # ran out od parallelization
+    # strategy:
+    #   matrix:
+    #     machines: [1, 2]
+    needs: [install-dependencies]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Setup node
-        uses: actions/setup-node@v3
+      - uses: actions/checkout@v3
+
+      - name: Install Specific Chrome Version
+        run: |
+          sudo apt-get install -y wget
+          sudo wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo apt-get install ./google-chrome-stable_current_amd64.deb
+
+      - name: Cypress e2e tests 🧪
+        uses: cypress-io/github-action@v5.0.9
         with:
-          node-version: 16
-      - name: Install dependencies
-        uses: bahmutov/npm-install@v1
-      - uses: actions/cache@v2
+          start: npm start
+          wait-on: 'http://localhost:3000'
+          browser: replay-chromium
+          #record: true
+          # parallel: true
+          group: e2e-tests
+          tag: e2e-tests
+        env:
+          #CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload artifacts (Coverage_step3)
+        uses: actions/upload-artifact@v3.1.2
         with:
-          path: ~/.cache/Cypress
-          key: my-cache-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-      - uses: replayio/action-cypress@v0.2.7
+          name: coverage-cy-e2e
+          path: coverage-cy/
+          retention-days: 1
+      - name: ✅ Upload e2e coverage to Codecov
+        uses: codecov/codecov-action@v3
         with:
-          # An API key (usually a Team API Key) to use to upload replays.
-          # Configure this via GitHub repo settings.
+          directory: coverage-cy/
+          flags: cypress-e2e-coverage
+          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload replays
+        if: always()
+        uses: replayio/action-upload@v0.4.7
+        with:
           api-key: rwk_r0HfdJBTl9IYKTS6LMg6BBG0RTVo7rcyVnLeoBA9uO8
-          # The Replay browser to use: 'replay-firefox' or 'replay-chromium'
-          browser: 'replay-chromium'
-          # An optional command to run your tests.
-          command: npm run cy:open-e2e
-          # When true, replays will be accessible to anyone with the link.
-          # This is useful for open source projects that want to collaborate
-          # with external users.
-          public: true
-          # When true, replays of both passed and failed tests are uploaded
-          upload-all: true
-          # An optional working directory which is useful if the project being
-          # tested resides in a subdirectory of the repository
-          working-directory: .
