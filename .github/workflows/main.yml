@@ -23,18 +23,32 @@ jobs:
         with:
           runTests: false
   cypress-e2e-test:
-    - name: Run tests with Cypress
-      uses: cypress-io/github-action@v4.2.0
-      with:
-        browser: "Replay Chromium"
-        start: npm run start
-        wait-on: 'http://localhost:3000'
-      env:
-        RECORD_ALL_CONTENT: 1
-				RECORD_REPLAY_METADATA_FILE: /tmp/replay-metadata
+    #    if you want to enable parallelization
+    strategy:
+      matrix:
+        machines: [1, 2, 3]
+    needs: [install-dependencies]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
 
-    - name: Upload replays
-      if: ${{ always() }}
-      uses: replayio/action-upload@v0.4.7
-      with:
-         api-key: rwk_r0HfdJBTl9IYKTS6LMg6BBG0RTVo7rcyVnLeoBA9uO8
+      - name: Install Specific Chrome Version
+        run: |
+          sudo apt-get install -y wget
+          sudo wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo apt-get install ./google-chrome-stable_current_amd64.deb
+      - name: Run tests with Cypress
+        uses: cypress-io/github-action@v4.2.0
+        with:
+          browser: 'Replay Chromium'
+          start: npm run start
+          wait-on: 'http://localhost:3000'
+        env:
+          RECORD_ALL_CONTENT: 1
+          RECORD_REPLAY_METADATA_FILE: /tmp/replay-metadata
+
+      - name: Upload replays
+        if: ${{ always() }}
+        uses: replayio/action-upload@v0.4.7
+        with:
+          api-key: rwk_r0HfdJBTl9IYKTS6LMg6BBG0RTVo7rcyVnLeoBA9uO8
