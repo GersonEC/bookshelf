@@ -34,7 +34,7 @@ jobs:
       - name: Run tests with Cypress
         uses: cypress-io/github-action@v4.2.0
         with:
-          browser: 'chromium'
+          browser: 'replay-chromium'
           start: npm run start
           wait-on: 'http://localhost:3000'
         env:
